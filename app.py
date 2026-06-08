@@ -15,13 +15,37 @@ and an unsorted sublist at the back. It repeatedly finds the **minimum element**
 
 # Sidebar Control Panel
 st.sidebar.header("🔧 Control Panel")
-array_size = st.sidebar.slider("Array Size", min_value=5, max_value=50, value=20, step=5)
-speed = st.sidebar.slider("Animation Delay (seconds)", min_value=0.05, max_value=1.5, value=0.2, step=0.05)
 
-# Session state initialization to hold data across interactions
-if "array" not in st.session_state or st.sidebar.button("🔄 Generate New Array"):
+# --- NEW: Custom Array Input ---
+st.sidebar.subheader("1. Enter Custom Array")
+custom_input = st.sidebar.text_input("Comma-separated numbers:", placeholder="e.g., 42, 17, 89, 3, 22")
+
+if st.sidebar.button("💾 Set Custom Array"):
+    try:
+        # Parse the text input into a list of integers, ignoring extra spaces
+        parsed_array = [int(x.strip()) for x in custom_input.split(",") if x.strip()]
+        if len(parsed_array) > 0:
+            st.session_state.array = parsed_array
+            st.session_state.sorting = False
+        else:
+            st.sidebar.error("Please enter at least one number.")
+    except ValueError:
+        st.sidebar.error("Invalid input! Please use only whole numbers and commas.")
+
+st.sidebar.markdown("---")
+
+# --- Random Array Generator ---
+st.sidebar.subheader("2. Or Generate Random Array")
+array_size = st.sidebar.slider("Random Array Size", min_value=5, max_value=50, value=20, step=5)
+
+if "array" not in st.session_state or st.sidebar.button("🔄 Generate Random Array"):
     st.session_state.array = [random.randint(10, 100) for _ in range(array_size)]
     st.session_state.sorting = False
+
+st.sidebar.markdown("---")
+
+# --- Animation Speed ---
+speed = st.sidebar.slider("Animation Delay (seconds)", min_value=0.05, max_value=1.5, value=0.2, step=0.05)
 
 arr = st.session_state.array
 
@@ -50,7 +74,7 @@ def render_chart(array, current_i=-1, current_j=-1, min_idx=-1, is_done=False):
         y=alt.Y("Value:Q", title="Value"),
         color=alt.Color("Status:N", scale=alt.Scale(
             domain=["Unsorted", "Scanning Element", "Current Minimum", "Sorted"],
-            range=["#A0AEC0", "#ECC94B", "#E53E3E", "#38A169"] # Muted Grey, Yellow, Red, Green
+            range=["#A0AEC0", "#ECC94B", "#E53E3E", "#38A169"] 
         ), title="Element State")
     ).properties(height=400)
     
@@ -66,7 +90,6 @@ if st.sidebar.button("🚀 Start Sorting"):
     for i in range(n):
         min_idx = i
         for j in range(i + 1, n):
-            # Update visual highlighting comparison pass
             chart_placeholder.altair_chart(render_chart(arr, i, j, min_idx), use_container_width=True)
             time.sleep(speed)
             
